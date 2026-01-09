@@ -300,6 +300,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <button onClick={onLogout} className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-red-900 transition-colors text-red-400">
             <span>🚪</span> <span>लगआउट</span>
           </button>
+          <p className="text-[10px] text-gray-500 text-center mt-4">Developed by: Swastik Khatiwada</p>
         </div>
       </aside>
 
