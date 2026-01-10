@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { NEWS_STATUS } from '../constants.ts';
+import { getExactNepaliDate } from '../utils/nepaliDate.ts';
 
 interface NewsDetailModalProps {
   news: any | null;
@@ -7,6 +9,18 @@ interface NewsDetailModalProps {
 
 const NewsDetailModal: React.FC<NewsDetailModalProps> = ({ news, onClose }) => {
   const [copied, setCopied] = useState(false);
+  
+  // Logic: 
+  // If news is PUBLISHED, show the fixed date stored in the DB.
+  // If news is PENDING (or draft), show the CURRENT dynamic date (matching homepage), 
+  // because when it gets published, it will seize the current date.
+  const displayDate = useMemo(() => {
+      if (!news) return '';
+      if (news.status === NEWS_STATUS.PUBLISHED && news.date) {
+          return news.date;
+      }
+      return getExactNepaliDate();
+  }, [news]);
 
   // Dynamic Meta Tags for Social Sharing
   useEffect(() => {
@@ -138,7 +152,7 @@ const NewsDetailModal: React.FC<NewsDetailModalProps> = ({ news, onClose }) => {
                             <svg className="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            {news.date || '२०८१ फागुन २३'}
+                            {displayDate}
                         </span>
                      </div>
                 </div>
