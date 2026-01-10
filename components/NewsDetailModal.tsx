@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface NewsDetailModalProps {
   news: any | null;
@@ -7,6 +7,53 @@ interface NewsDetailModalProps {
 
 const NewsDetailModal: React.FC<NewsDetailModalProps> = ({ news, onClose }) => {
   const [copied, setCopied] = useState(false);
+
+  // Dynamic Meta Tags for Social Sharing
+  useEffect(() => {
+    if (!news) return;
+
+    // Save previous title
+    const prevTitle = document.title;
+    const currentUrl = `${window.location.origin}${window.location.pathname}?news=${news.id}`;
+    
+    // 1. Update Title
+    document.title = `${news.title} | दृष्टि खबर`;
+
+    // 2. Helper to set meta tags
+    const setMeta = (selector: string, content: string) => {
+        let element = document.querySelector(selector);
+        if (!element) {
+            element = document.createElement('meta');
+            // Extract attribute name and value from selector for creation
+            // e.g. meta[property="og:title"] -> setAttribute('property', 'og:title')
+            const parts = selector.match(/\[(.*?)=["'](.*?)["']\]/);
+            if (parts) {
+                element.setAttribute(parts[1], parts[2]);
+            }
+            document.head.appendChild(element);
+        }
+        element.setAttribute('content', content);
+    };
+
+    // 3. Set Open Graph (Facebook) Tags
+    setMeta('meta[property="og:type"]', 'article');
+    setMeta('meta[property="og:title"]', news.title);
+    setMeta('meta[property="og:description"]', news.description ? news.description.substring(0, 150) + '...' : '');
+    setMeta('meta[property="og:image"]', news.imageUrl);
+    setMeta('meta[property="og:url"]', currentUrl);
+    setMeta('meta[property="og:site_name"]', 'दृष्टि खबर');
+
+    // 4. Set Twitter Card Tags
+    setMeta('meta[name="twitter:card"]', 'summary_large_image');
+    setMeta('meta[name="twitter:title"]', news.title);
+    setMeta('meta[name="twitter:description"]', news.description ? news.description.substring(0, 150) + '...' : '');
+    setMeta('meta[name="twitter:image"]', news.imageUrl);
+
+    return () => {
+        document.title = prevTitle;
+        // Optionally reset specific meta tags here if needed
+    };
+  }, [news]);
 
   if (!news) return null;
 
