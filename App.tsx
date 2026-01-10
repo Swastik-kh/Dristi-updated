@@ -433,6 +433,8 @@ function App() {
         twitterLink={twitterLink}
         youtubeLink={youtubeLink}
         instagramLink={instagramLink}
+        contactEmail={contactEmail}
+        contactPhone={contactPhone}
       />
 
       <LoginModal 
