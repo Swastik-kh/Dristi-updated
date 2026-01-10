@@ -107,7 +107,10 @@ function App() {
     const usersCollection = collection(db, "users");
     const unsubscribeUsers = onSnapshot(usersCollection, async (snapshot) => {
       const firebaseUsers = snapshot.docs.map(doc => ({
-        ...doc.data()
+        ...doc.data(),
+        // CRITICAL: Ensure 'username' matches the document ID. 
+        // This guarantees that deleting by 'username' deletes the correct document.
+        username: doc.id 
       }));
 
       // Robust Seeding: Check if 'admin' exists specifically. 

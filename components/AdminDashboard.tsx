@@ -44,7 +44,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   allNews, users, onAddNews, onApproveNews, onDeleteNews,
   onAddUser, onUpdateUser, onDeleteUser
 }) => {
-  const [activeTab, setActiveTab] = useState(user.permissions.includes(PERMISSIONS.VIEW_DASHBOARD) ? 'dashboard' : 'post');
+  const [activeTab, setActiveTab] = useState(user.permissions?.includes(PERMISSIONS.VIEW_DASHBOARD) ? 'dashboard' : 'post');
   const [activeSettingsSubTab, setActiveSettingsSubTab] = useState('general');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,7 +102,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
 
-  const hasPermission = (perm: string) => user.permissions.includes(perm);
+  const hasPermission = (perm: string) => user.permissions?.includes(perm);
 
   const stats = [
     { label: 'जम्मा समाचार', count: allNews.length, icon: '📝', color: 'bg-blue-500' },
@@ -235,7 +235,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const openEditUser = (u: any) => {
     setEditingUser(u);
-    setUserForm({ ...u });
+    // Safe spread: ensure permissions is an array, defaulting to empty array if missing
+    setUserForm({ 
+      ...u,
+      permissions: Array.isArray(u.permissions) ? u.permissions : [] 
+    });
     setIsUserModalOpen(true);
   };
 
@@ -257,20 +261,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const togglePermission = (perm: string) => {
     setUserForm(prev => {
-        const newPerms = prev.permissions.includes(perm)
-            ? prev.permissions.filter(p => p !== perm)
-            : [...prev.permissions, perm];
+        // Safe access to permissions array
+        const currentPerms = Array.isArray(prev.permissions) ? prev.permissions : [];
+        const newPerms = currentPerms.includes(perm)
+            ? currentPerms.filter(p => p !== perm)
+            : [...currentPerms, perm];
         return { ...prev, permissions: newPerms };
     });
   };
 
-  const handleDeleteUserClick = (username: string) => {
-    if (username === user.username) {
+  const handleDeleteUserClick = (targetUsername: string) => {
+    if (targetUsername === user.username) {
         alert('तपाईंले आफ्नो आईडी हटाउन सक्नुहुन्न।');
         return;
     }
-    if (confirm('के तपाईं पक्का हुनुहुन्छ? यो प्रयोगकर्ता हटाइनेछ।')) {
-      onDeleteUser(username);
+    if (confirm(`के तपाईं पक्का हुनुहुन्छ? '${targetUsername}' प्रयोगकर्ता स्थायी रूपमा हटाइनेछ।`)) {
+      onDeleteUser(targetUsername);
     }
   };
 
@@ -858,7 +864,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             
                             <div className="grid grid-cols-1 gap-2">
                                 <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer group transition-colors">
-                                    <input type="checkbox" checked={userForm.permissions.includes(PERMISSIONS.VIEW_DASHBOARD)} onChange={() => togglePermission(PERMISSIONS.VIEW_DASHBOARD)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
+                                    <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.VIEW_DASHBOARD)} onChange={() => togglePermission(PERMISSIONS.VIEW_DASHBOARD)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">📊 ड्यासबोर्ड (Dashboard)</p>
                                         <p className="text-[10px] text-gray-400">मुख्य तथ्याङ्कहरू हेर्न</p>
@@ -866,7 +872,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </label>
 
                                 <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer group transition-colors">
-                                    <input type="checkbox" checked={userForm.permissions.includes(PERMISSIONS.POST_NEWS)} onChange={() => togglePermission(PERMISSIONS.POST_NEWS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
+                                    <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.POST_NEWS)} onChange={() => togglePermission(PERMISSIONS.POST_NEWS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">✍️ समाचार लेख्ने (Post News)</p>
                                         <p className="text-[10px] text-gray-400">नयाँ समाचार थप्ने अधिकार</p>
@@ -874,7 +880,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </label>
 
                                 <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer group transition-colors">
-                                    <input type="checkbox" checked={userForm.permissions.includes(PERMISSIONS.MANAGE_NEWS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_NEWS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
+                                    <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.MANAGE_NEWS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_NEWS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">📰 समाचार व्यवस्थापन (Approval)</p>
                                         <p className="text-[10px] text-gray-400">समाचार स्वीकृत र हटाउने अधिकार</p>
@@ -882,7 +888,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </label>
 
                                 <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer group transition-colors">
-                                    <input type="checkbox" checked={userForm.permissions.includes(PERMISSIONS.MANAGE_USERS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_USERS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
+                                    <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.MANAGE_USERS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_USERS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">👥 प्रयोगकर्ता (User Mgmt)</p>
                                         <p className="text-[10px] text-gray-400">स्टाफहरू थप्ने र अनुमति दिने अधिकार</p>
@@ -890,7 +896,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </label>
 
                                 <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer group transition-colors">
-                                    <input type="checkbox" checked={userForm.permissions.includes(PERMISSIONS.MANAGE_SETTINGS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_SETTINGS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
+                                    <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.MANAGE_SETTINGS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_SETTINGS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">🌐 वेबसाइट सेटिङ् (General)</p>
                                         <p className="text-[10px] text-gray-400">लोगो र नाम परिवर्तन गर्ने अधिकार</p>
@@ -898,7 +904,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </label>
 
                                 <label className="flex items-center space-x-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 cursor-pointer group transition-colors">
-                                    <input type="checkbox" checked={userForm.permissions.includes(PERMISSIONS.MANAGE_SECURITY)} onChange={() => togglePermission(PERMISSIONS.MANAGE_SECURITY)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
+                                    <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.MANAGE_SECURITY)} onChange={() => togglePermission(PERMISSIONS.MANAGE_SECURITY)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">🔒 सुरक्षा (Security)</p>
                                         <p className="text-[10px] text-gray-400">आफ्नो पासवर्ड परिवर्तन गर्ने अधिकार</p>
