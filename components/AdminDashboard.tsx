@@ -12,6 +12,18 @@ interface AdminDashboardProps {
   onSiteTitleUpdate: (title: string) => void; // Callback for site title update
   siteSlogan: string; // New prop for site slogan
   onSiteSloganUpdate: (slogan: string) => void; // Callback for site slogan update
+  
+  facebookLink: string;
+  onFacebookLinkUpdate: (link: string) => void;
+  twitterLink: string;
+  onTwitterLinkUpdate: (link: string) => void;
+  youtubeLink: string;
+  onYoutubeLinkUpdate: (link: string) => void;
+  contactEmail: string;
+  onContactEmailUpdate: (email: string) => void;
+  contactPhone: string;
+  onContactPhoneUpdate: (phone: string) => void;
+
   allNews: any[];
   users: any[];
   onAddNews: (news: any) => void;
@@ -25,6 +37,8 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
   user, onLogout, logoUrl, onLogoUpdate, adsenseCode, onAdsenseUpdate, 
   siteTitle, onSiteTitleUpdate, siteSlogan, onSiteSloganUpdate,
+  facebookLink, onFacebookLinkUpdate, twitterLink, onTwitterLinkUpdate, youtubeLink, onYoutubeLinkUpdate,
+  contactEmail, onContactEmailUpdate, contactPhone, onContactPhoneUpdate,
   allNews, users, onAddNews, onApproveNews, onDeleteNews,
   onAddUser, onUpdateUser, onDeleteUser
 }) => {
@@ -41,6 +55,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [showInTicker, setShowInTicker] = useState(true);
   const [showAuthor, setShowAuthor] = useState(true);
   const [newsImage, setNewsImage] = useState<string | null>(null);
+  const [publishImmediately, setPublishImmediately] = useState(false); // State for immediate publish
 
   // User Form State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -58,23 +73,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [tempAdsense, setTempAdsense] = useState<string>(adsenseCode);
   const [tempSiteTitle, setTempSiteTitle] = useState(siteTitle);
   const [tempSiteSlogan, setTempSiteSlogan] = useState(siteSlogan);
+  const [tempFacebookLink, setTempFacebookLink] = useState(facebookLink);
+  const [tempTwitterLink, setTempTwitterLink] = useState(twitterLink);
+  const [tempYoutubeLink, setTempYoutubeLink] = useState(youtubeLink);
+  const [tempContactEmail, setTempContactEmail] = useState(contactEmail);
+  const [tempContactPhone, setTempContactPhone] = useState(contactPhone);
+
 
   // Sync props to temp states
   useEffect(() => {
     setTempLogo(logoUrl);
-  }, [logoUrl]);
-
-  useEffect(() => {
     setTempAdsense(adsenseCode);
-  }, [adsenseCode]);
-
-  useEffect(() => {
     setTempSiteTitle(siteTitle);
-  }, [siteTitle]);
-
-  useEffect(() => {
     setTempSiteSlogan(siteSlogan);
-  }, [siteSlogan]);
+    setTempFacebookLink(facebookLink);
+    setTempTwitterLink(twitterLink);
+    setTempYoutubeLink(youtubeLink);
+    setTempContactEmail(contactEmail);
+    setTempContactPhone(contactPhone);
+  }, [logoUrl, adsenseCode, siteTitle, siteSlogan, facebookLink, twitterLink, youtubeLink, contactEmail, contactPhone]);
 
   // Password Change State
   const [currentPwd, setCurrentPwd] = useState('');
@@ -123,6 +140,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return;
     }
 
+    // Determine Status: If user has MANAGE_NEWS and checked "Publish Immediately", it is PUBLISHED. Otherwise PENDING.
+    const canPublish = hasPermission(PERMISSIONS.MANAGE_NEWS);
+    const finalStatus = (canPublish && publishImmediately) ? NEWS_STATUS.PUBLISHED : NEWS_STATUS.PENDING;
+
     const newNews = {
       id: Date.now(), // This ID will be used as creationTimestamp in Firestore
       title: newsTitle,
@@ -131,12 +152,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       imageUrl: newsImage,
       author: user.name,
       date: '२०८१/११/२३', // Consider making this dynamic based on client-side date or server timestamp
-      status: NEWS_STATUS.PENDING,
+      status: finalStatus,
       isPopular: false,
       showInTicker,
       showAuthor
     };
     onAddNews(newNews);
+    
+    // Provide feedback based on what happened
+    if (finalStatus === NEWS_STATUS.PUBLISHED) {
+      alert('समाचार सफलतापूर्वक प्रकाशित भयो।');
+    } else {
+      alert('समाचार पेन्डिङमा राखियो। प्रधान सम्पादकले स्वीकृत गरेपछि यो प्रकाशित हुनेछ।');
+    }
     
     setNewsTitle('');
     setNewsDesc('');
@@ -144,9 +172,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setShowInTicker(true);
     setShowAuthor(true);
     setNewsImage(null);
+    setPublishImmediately(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
 
-    // Alert is now handled in App.tsx after Firebase operation
     setActiveTab('all-news');
   };
 
@@ -214,7 +242,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return;
     }
     if (newPwd.length < 4) {
-      alert('नयाँ पासवर्ड कम्तिमा ४ अक्षरको हुनुपर्reछ।');
+      alert('नयाँ पासवर्ड कम्तिमा ४ अक्षरको हुनुपreछ।');
       return;
     }
 
@@ -231,6 +259,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onAdsenseUpdate(tempAdsense);
     onSiteTitleUpdate(tempSiteTitle);
     onSiteSloganUpdate(tempSiteSlogan);
+    onFacebookLinkUpdate(tempFacebookLink);
+    onTwitterLinkUpdate(tempTwitterLink);
+    onYoutubeLinkUpdate(tempYoutubeLink);
+    onContactEmailUpdate(tempContactEmail);
+    onContactPhoneUpdate(tempContactPhone);
     alert('सेटिङ्हरू सफलतापुर्वक सुरक्षित गरियो।');
   };
 
@@ -259,7 +292,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="p-6 border-b border-gray-700 flex items-center justify-between">
           <div className="flex items-center space-x-3 overflow-hidden">
             <div className="w-10 h-10 flex-shrink-0">
-              {logoUrl ? <img src={logoUrl} className="w-full h-full object-contain rounded-md" alt="Site Logo" /> : <div className="w-full h-full bg-red-600 rounded-full flex items-center justify-center font-black">D</div>}
+              {logoUrl ? <img src={logoUrl} className="w-full h-full object-contain rounded-md" alt="Site Logo" /> : <div className="w-full h-10 flex items-center justify-center font-black bg-red-600 rounded-md">D</div>}
             </div>
             <div className="truncate">
               <h2 className="text-xl font-black text-red-500 italic leading-none">{siteTitle} प्यानल</h2>
@@ -364,6 +397,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <input type="checkbox" checked={showAuthor} onChange={e => setShowAuthor(e.target.checked)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                           <span className="text-sm font-medium text-gray-700 group-hover:text-red-600 transition-colors">लेखकको नाम देखाउने</span>
                         </label>
+                        
+                        {/* Only show "Publish Immediately" checkbox if user has permission to manage news */}
+                        {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
+                          <label className="flex items-center space-x-3 cursor-pointer group bg-green-50 p-2 rounded border border-green-100">
+                            <input 
+                              type="checkbox" 
+                              checked={publishImmediately} 
+                              onChange={e => setPublishImmediately(e.target.checked)} 
+                              className="w-5 h-5 text-green-600 rounded border-gray-300 focus:ring-green-500" 
+                            />
+                            <div>
+                                <span className="text-sm font-bold text-green-800 block">सीधै प्रकाशित गर्नुहोस्</span>
+                                <span className="text-[10px] text-green-600">चेक नगरेमा "पेन्डिङ" मा बस्नेछ</span>
+                            </div>
+                          </label>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -390,7 +439,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div className="pt-4">
-                  <button type="submit" className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 shadow-lg transform active:scale-95 transition-all">सुरक्षित गर्नुहोस्</button>
+                  <button type="submit" className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 shadow-lg transform active:scale-95 transition-all">
+                      {hasPermission(PERMISSIONS.MANAGE_NEWS) && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish)' : 'सुरक्षित गर्नुहोस् (Save to Pending)'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -585,26 +636,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xl">📱</div>
                             <div>
                                <h3 className="text-xl font-black text-gray-900">सम्पर्क र सामाजिक सञ्जाल</h3>
-                               <p className="text-sm text-gray-500">फेसबुक, ट्विटर र सम्पर्क नम्बर अपडेट गर्नुहोस्।</p>
+                               <p className="text-sm text-gray-500">फेसबुक, ट्विटर, युट्युब, इमेल र सम्पर्क नम्बर अपडेट गर्नुहोस्।</p>
                             </div>
                          </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">फेसबुक लिंक</label>
-                               <input type="text" placeholder="https://facebook.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                               <input type="text" value={tempFacebookLink} onChange={e => setTempFacebookLink(e.target.value)} placeholder="https://facebook.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">ट्विटर लिंक</label>
-                               <input type="text" placeholder="https://twitter.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                               <input type="text" value={tempTwitterLink} onChange={e => setTempTwitterLink(e.target.value)} placeholder="https://twitter.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                            </div>
+                            <div>
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">युट्युब लिंक</label>
+                               <input type="text" value={tempYoutubeLink} onChange={e => setTempYoutubeLink(e.target.value)} placeholder="https://youtube.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">इमेल ठेगाना</label>
-                               <input type="email" placeholder="info@drishtikhabar.com" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                               <input type="email" value={tempContactEmail} onChange={e => setTempContactEmail(e.target.value)} placeholder="info@drishtikhabar.com" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">सम्पर्क नम्बर</label>
-                               <input type="text" placeholder="+९७७-०१-xxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                               <input type="text" value={tempContactPhone} onChange={e => setTempContactPhone(e.target.value)} placeholder="+९७७-०१-xxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                          </div>
                       </div>

@@ -36,7 +36,9 @@ export const MOCK_USERS = [
     password: 'editor', 
     name: 'श्याम हरि', 
     role: ROLES.EDITOR,
-    permissions: [PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.POST_NEWS, PERMISSIONS.MANAGE_NEWS, PERMISSIONS.MANAGE_SECURITY]
+    // Removed MANAGE_NEWS so the editor cannot approve news. 
+    // They can only post (which goes to pending) and view dashboard.
+    permissions: [PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.POST_NEWS, PERMISSIONS.MANAGE_SECURITY]
   },
   { 
     username: 'reporter', 
