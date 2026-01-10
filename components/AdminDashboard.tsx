@@ -45,7 +45,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onAddUser, onUpdateUser, onDeleteUser
 }) => {
   const [activeTab, setActiveTab] = useState(user.permissions?.includes(PERMISSIONS.VIEW_DASHBOARD) ? 'dashboard' : 'post');
-  const [activeSettingsSubTab, setActiveSettingsSubTab] = useState('general');
+  // Default to 'general' ONLY if Chief Editor, otherwise 'security'
+  const [activeSettingsSubTab, setActiveSettingsSubTab] = useState(user.role === ROLES.CHIEF_EDITOR ? 'general' : 'security');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -184,7 +185,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
 
     // Determine Status: If user has MANAGE_NEWS and checked "Publish Immediately", it is PUBLISHED. Otherwise PENDING.
-    const canPublish = hasPermission(PERMISSIONS.MANAGE_NEWS);
+    // Explicitly exclude REPORTER from direct publishing even if permissions allow
+    const canPublish = hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER;
     const finalStatus = (canPublish && publishImmediately) ? NEWS_STATUS.PUBLISHED : NEWS_STATUS.PENDING;
 
     const newNews = {
@@ -369,7 +371,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <span>👥</span> <span>प्रयोगकर्ताहरू</span>
             </button>
           )}
-          {(hasPermission(PERMISSIONS.MANAGE_SETTINGS) || hasPermission(PERMISSIONS.MANAGE_SECURITY)) && (
+          {/* Settings Tab: Visible if Chief Editor OR has Security Permission */}
+          {(user.role === ROLES.CHIEF_EDITOR || hasPermission(PERMISSIONS.MANAGE_SECURITY)) && (
             <button onClick={() => handleTabClick('settings')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-red-600' : 'hover:bg-gray-700'}`}>
               <span>⚙️</span> <span>सेटिङ्हरू</span>
             </button>
@@ -448,8 +451,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           <span className="text-sm font-medium text-gray-700 group-hover:text-red-600 transition-colors">लेखकको नाम देखाउने</span>
                         </label>
                         
-                        {/* Only show "Publish Immediately" checkbox if user has permission to manage news */}
-                        {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
+                        {/* Only show "Publish Immediately" checkbox if user has permission to manage news AND is not a REPORTER */}
+                        {hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER && (
                           <label className="flex items-center space-x-3 cursor-pointer group bg-green-50 p-2 rounded border border-green-100">
                             <input 
                               type="checkbox" 
@@ -490,7 +493,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 <div className="pt-4">
                   <button type="submit" className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 shadow-lg transform active:scale-95 transition-all">
-                      {hasPermission(PERMISSIONS.MANAGE_NEWS) && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish)' : 'सुरक्षित गर्नुहोस् (Save to Pending)'}
+                      {hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish)' : 'सुरक्षित गर्नुहोस् (Save to Pending)'}
                   </button>
                 </div>
               </form>
@@ -604,7 +607,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
              <div className="max-w-4xl mx-auto space-y-6">
                 {/* Settings Sub-Navigation */}
                 <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100 w-fit mx-auto md:mx-0">
-                   {hasPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                   {/* Restricted: Only Chief Editor sees General Settings */}
+                   {user.role === ROLES.CHIEF_EDITOR && (
                      <button 
                        onClick={() => setActiveSettingsSubTab('general')}
                        className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeSettingsSubTab === 'general' ? 'bg-red-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
@@ -622,7 +626,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                    )}
                 </div>
 
-                {activeSettingsSubTab === 'general' && hasPermission(PERMISSIONS.MANAGE_SETTINGS) && (
+                {activeSettingsSubTab === 'general' && user.role === ROLES.CHIEF_EDITOR && (
                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                       <div className="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100">
                          <div className="flex items-center space-x-4 mb-8">
@@ -899,7 +903,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                     <input type="checkbox" checked={Array.isArray(userForm.permissions) && userForm.permissions.includes(PERMISSIONS.MANAGE_SETTINGS)} onChange={() => togglePermission(PERMISSIONS.MANAGE_SETTINGS)} className="w-5 h-5 text-red-600 rounded border-gray-300 focus:ring-red-500" />
                                     <div className="flex-1">
                                         <p className="text-sm font-bold text-gray-800 group-hover:text-red-600">🌐 वेबसाइट सेटिङ् (General)</p>
-                                        <p className="text-[10px] text-gray-400">लोगो र नाम परिवर्तन गर्ने अधिकार</p>
+                                        <p className="text-[10px] text-gray-400">लोगो र नाम परिवर्तन गर्ने अधिकार (Role Restricted)</p>
                                     </div>
                                 </label>
 
