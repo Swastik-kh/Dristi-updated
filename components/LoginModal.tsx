@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ROLES, PERMISSIONS } from '../constants.ts';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -16,14 +17,39 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    const user = users.find(u => u.username === username && u.password === password);
+    const cleanUsername = username.trim();
+    const cleanPassword = password.trim();
+
+    // 1. Try to find user in the loaded Database list
+    let user = users.find(u => u.username === cleanUsername && u.password === cleanPassword);
     
+    // 2. FAILSAFE: If database is empty, slow, or 'admin' is missing, 
+    // manually allow login for 'admin'/'admin'.
+    if (!user && cleanUsername === 'admin' && cleanPassword === 'admin') {
+      console.log("Using Failsafe Admin Login");
+      user = { 
+        username: 'admin', 
+        password: 'admin', 
+        name: 'System Admin (Failsafe)', 
+        role: ROLES.CHIEF_EDITOR,
+        permissions: Object.values(PERMISSIONS) 
+      };
+    }
+
     if (user) {
       setError('');
       onLoginSuccess(user);
       onClose();
+      // Reset form
+      setUsername('');
+      setPassword('');
     } else {
-      setError('प्रयोगकर्ताको नाम वा पासवर्ड मिलेन।');
+      if (users.length === 0) {
+        // If users list is empty but credentials were wrong (not admin/admin)
+        setError('डाटा लोड हुँदैछ... कृपया admin / admin प्रयोग गर्नुहोस्।');
+      } else {
+        setError('प्रयोगकर्ताको नाम वा पासवर्ड मिलेन।');
+      }
     }
   };
 
@@ -75,7 +101,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, onLoginSuccess
             </div>
 
             {error && (
-              <p className="text-red-600 text-sm font-medium text-center">{error}</p>
+              <p className="text-red-600 text-sm font-medium text-center bg-red-50 p-2 rounded">{error}</p>
             )}
 
             <button 

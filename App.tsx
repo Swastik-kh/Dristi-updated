@@ -110,19 +110,24 @@ function App() {
         ...doc.data()
       }));
 
-      if (firebaseUsers.length === 0) {
-        console.log("No users found in database. Seeding default admin...");
-        // If DB is empty, seed with the default admin from MOCK_USERS
+      // Robust Seeding: Check if 'admin' exists specifically. 
+      // If 'admin' is missing (even if other users exist), re-create it.
+      // This solves the issue where the DB might be in a partial state or empty.
+      const adminExists = firebaseUsers.some((u: any) => u.username === 'admin');
+
+      if (!adminExists) {
+        console.log("Admin user missing. Seeding default admin...");
         const defaultAdmin = MOCK_USERS[0];
         try {
           await setDoc(doc(db, "users", defaultAdmin.username), defaultAdmin);
+          // Note: The snapshot listener will fire again automatically after this write.
         } catch (e) {
           console.error("Error seeding default admin:", e);
         }
-        // No need to setUsers here; the snapshot will fire again after the write
-      } else {
-        setUsers(firebaseUsers);
       }
+      
+      setUsers(firebaseUsers);
+      
     }, (error) => {
       console.error("Error fetching users from Firestore:", error);
       // Fallback to mock users if offline/error to allow at least local admin login
