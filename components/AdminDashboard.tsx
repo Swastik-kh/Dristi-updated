@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ROLES, NEWS_STATUS, CATEGORIES, PERMISSIONS, NEWS_PORTAL_SLOGAN } from '../constants.ts';
+import { getExactNepaliDate } from '../utils/nepaliDate.ts';
 
 interface AdminDashboardProps {
   user: any;
@@ -253,7 +254,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
        const newNews = {
          id: Date.now(), // This ID will be used as creationTimestamp in Firestore
          author: user.name,
-         date: '२०८१/११/२३', // Consider making this dynamic based on client-side date or server timestamp
+         date: getExactNepaliDate(), // Use dynamic date instead of hardcoded
          isPopular: false,
          ...commonData
        };
@@ -1023,31 +1024,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <form onSubmit={handleUserSubmit} className="p-6 flex-grow overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         {/* Column 1: Personal Info */}
-                        <div className="space-y-4">
-                            <h4 className="text-sm font-black text-gray-900 border-b pb-2 uppercase tracking-wide">व्यक्तिगत विवरण</h4>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">पूरा नाम</label>
-                                <input required type="text" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500" placeholder="राम बहादुर थापा" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">युजरनेम</label>
-                                <input required type="text" disabled={!!editingUser} value={userForm.username} onChange={e => setUserForm({...userForm, username: e.target.value.toLowerCase().replace(/\s/g, '')})} className={`w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500 ${editingUser ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`} placeholder="ram_thapa" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">पासवर्ड</label>
-                                <input required type="password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500" placeholder="••••••••" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">पद (Access Role)</label>
-                                <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full px-4 py-2 border rounded-lg outline-none bg-white focus:ring-2 focus:ring-red-500">
-                                    <option value={ROLES.CHIEF_EDITOR}>{ROLES.CHIEF_EDITOR}</option>
-                                    <option value={ROLES.EDITOR}>{ROLES.EDITOR}</option>
-                                    <option value={ROLES.REPORTER}>{ROLES.REPORTER}</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Column 2: Individual Menu Permissions */}
                         <div className="space-y-4">
                             <h4 className="text-sm font-black text-gray-900 border-b pb-2 uppercase tracking-wide">मेनु पहुँच अनुमति (Menu Access)</h4>
                             <p className="text-[10px] text-gray-400 mb-2 italic">यहाँबाट यो प्रयोगकर्ताले कुन मेनु र सब-मेनु देख्न पाउने हो छान्नुहोस्:</p>

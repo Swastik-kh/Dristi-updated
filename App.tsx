@@ -10,6 +10,7 @@ import LoginModal from './components/LoginModal.tsx';
 import AdminDashboard from './components/AdminDashboard.tsx';
 import NewsDetailModal from './components/NewsDetailModal.tsx';
 import { NEWS_STATUS, MOCK_USERS, NEWS_PORTAL_SLOGAN } from './constants.ts';
+import { getExactNepaliDate } from './utils/nepaliDate.ts';
 
 // Firebase Imports
 import { db, analytics } from './firebase.ts'; 
@@ -377,7 +378,10 @@ function App() {
   const handleApproveNews = async (newsId: string) => {
     try {
       const newsRef = doc(db, "news", newsId);
-      await updateDoc(newsRef, { status: NEWS_STATUS.PUBLISHED });
+      await updateDoc(newsRef, { 
+        status: NEWS_STATUS.PUBLISHED,
+        date: getExactNepaliDate() // Update date to current moment when approving
+      });
       alert('समाचार स्वीकृत र प्रकाशित गरियो।');
     } catch (e) {
       console.error("Error approving news: ", e);
@@ -437,7 +441,8 @@ function App() {
   };
 
   const publishedNews = allNews.filter(news => news.status === NEWS_STATUS.PUBLISHED);
-  const tickerNews = publishedNews.filter(news => news.showInTicker);
+  // Limit ticker news to 5 latest items
+  const tickerNews = publishedNews.filter(news => news.showInTicker).slice(0, 5);
 
   if (user) {
     return (
