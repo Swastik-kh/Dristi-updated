@@ -38,11 +38,12 @@ function App() {
   const [selectedNews, setSelectedNews] = useState<any | null>(null);
   const [activeCategory, setActiveCategory] = useState('सबै');
   const [allNews, setAllNews] = useState<any[]>([]);
-  const [users, setUsers] = useState(MOCK_USERS);
+  // Initialize users as empty array; will be populated from Firestore
+  const [users, setUsers] = useState<any[]>([]);
 
-  // Firebase: Fetch and listen to news updates and app settings
+  // Firebase: Fetch and listen to news, settings, and USERS
   useEffect(() => {
-    // 1. Fetch and listen to App Settings in real-time
+    // 1. App Settings
     const settingsDocRef = doc(db, "settings", "app_settings");
     const unsubscribeSettings = onSnapshot(settingsDocRef, async (docSnap) => {
       if (docSnap.exists()) {
@@ -57,10 +58,7 @@ function App() {
         setInstagramLink(settingsData.instagramLink || '');
         setContactEmail(settingsData.contactEmail || '');
         setContactPhone(settingsData.contactPhone || '');
-        console.log('Firebase App Settings fetched successfully (real-time).');
       } else {
-        // Doc doesn't exist, create with defaults
-        console.log('Firebase app_settings document not found. Creating with default values.');
         try {
           await setDoc(settingsDocRef, {
             logoUrl: null,
@@ -74,21 +72,17 @@ function App() {
             contactEmail: '',
             contactPhone: '',
           });
-          console.log('Firebase app_settings document created with defaults.');
         } catch (e) {
           console.error('Error creating app_settings document:', e);
         }
       }
       setIsSettingsLoaded(true);
     }, (error) => {
-      console.error("Error fetching app settings from Firebase (real-time):", error);
-      alert("सेटिङहरू लोड गर्न असफल भयो। कृपया आफ्नो Firebase कन्फिगरेसन जाँच गर्नुहोस् वा नेटवर्क जडान हेर्नुहोस्।");
+      console.error("Error fetching app settings:", error);
       setIsSettingsLoaded(true);
     });
 
-
-    // 2. Fetch and listen to news updates
-    // Order by creationTimestamp to get newest news first
+    // 2. News
     const q = query(collection(db, "news"), orderBy("creationTimestamp", "desc"));
     const unsubscribeNews = onSnapshot(q, (snapshot) => {
       const newsData = snapshot.docs.map(doc => ({
@@ -96,14 +90,7 @@ function App() {
         ...doc.data() as any
       }));
       setAllNews(newsData);
-
-      if (snapshot.docs.length > 0) {
-        console.log('Firebase Firestore connected and initial news data fetched successfully.');
-      } else {
-        console.log('Firebase Firestore connected, no news found yet.');
-      }
-
-      // After loading news, re-check for deep link
+      
       const params = new URLSearchParams(window.location.search);
       const newsId = params.get('news');
       if (newsId) {
@@ -113,13 +100,39 @@ function App() {
         }
       }
     }, (error) => {
-      console.error("Error fetching news from Firebase:", error);
-      alert("समाचार लोड गर्न असफल भयो। कृपया आफ्नो Firebase कन्फिगरेसन जाँच गर्नुहोस् वा नेटवर्क जडान हेर्नुहोस्।");
+      console.error("Error fetching news:", error);
+    });
+
+    // 3. Users (Authentication & Management)
+    const usersCollection = collection(db, "users");
+    const unsubscribeUsers = onSnapshot(usersCollection, async (snapshot) => {
+      const firebaseUsers = snapshot.docs.map(doc => ({
+        ...doc.data()
+      }));
+
+      if (firebaseUsers.length === 0) {
+        console.log("No users found in database. Seeding default admin...");
+        // If DB is empty, seed with the default admin from MOCK_USERS
+        const defaultAdmin = MOCK_USERS[0];
+        try {
+          await setDoc(doc(db, "users", defaultAdmin.username), defaultAdmin);
+        } catch (e) {
+          console.error("Error seeding default admin:", e);
+        }
+        // No need to setUsers here; the snapshot will fire again after the write
+      } else {
+        setUsers(firebaseUsers);
+      }
+    }, (error) => {
+      console.error("Error fetching users from Firestore:", error);
+      // Fallback to mock users if offline/error to allow at least local admin login
+      setUsers(MOCK_USERS);
     });
 
     return () => {
       unsubscribeSettings();
       unsubscribeNews();
+      unsubscribeUsers();
     };
   }, []);
 
@@ -158,7 +171,7 @@ function App() {
     setUser(null);
   };
 
-  // Firestore Updates
+  // Firestore Updates - Settings
   const handleLogoUpdate = async (newLogoUrl: string) => {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { logoUrl: newLogoUrl });
@@ -284,6 +297,7 @@ function App() {
     }
   };
 
+  // Firestore Updates - News
   const handleAddNews = async (newsData: any) => {
     try {
       const { id, ...dataToStore } = newsData; 
@@ -322,19 +336,42 @@ function App() {
     }
   };
 
-  const handleAddUser = (newUser: any) => {
-    setUsers(prev => [...prev, newUser]);
-  };
-
-  const handleUpdateUser = (updatedUser: any) => {
-    setUsers(prev => prev.map(u => u.username === updatedUser.username ? updatedUser : u));
-    if (user && user.username === updatedUser.username) {
-      setUser(updatedUser);
+  // Firestore Updates - Users
+  const handleAddUser = async (newUser: any) => {
+    try {
+      // Use username as the Document ID for easy retrieval and uniqueness
+      await setDoc(doc(db, "users", newUser.username), newUser);
+      alert('नयाँ प्रयोगकर्ता सिस्टममा थपियो (Cloud Sync)। अब यो खाताबाट जुनसुकै ठाउँबाट लगइन गर्न सकिन्छ।');
+    } catch (e) {
+      console.error("Error adding user: ", e);
+      alert('प्रयोगकर्ता थप्दा त्रुटि भयो।');
     }
   };
 
-  const handleDeleteUser = (username: string) => {
-    setUsers(prev => prev.filter(u => u.username !== username));
+  const handleUpdateUser = async (updatedUser: any) => {
+    try {
+      // Overwrite/Merge user data
+      await setDoc(doc(db, "users", updatedUser.username), updatedUser);
+      alert('प्रयोगकर्ताको विवरण अपडेट गरियो।');
+      
+      // Update local session if the currently logged-in user modified themselves
+      if (user && user.username === updatedUser.username) {
+        setUser(updatedUser);
+      }
+    } catch (e) {
+      console.error("Error updating user: ", e);
+      alert('प्रयोगकर्ता अपडेट गर्दा त्रुटि भयो।');
+    }
+  };
+
+  const handleDeleteUser = async (username: string) => {
+    try {
+      await deleteDoc(doc(db, "users", username));
+      alert('प्रयोगकर्ता हटाइयो।');
+    } catch (e) {
+      console.error("Error deleting user: ", e);
+      alert('प्रयोगकर्ता हटाउँदा त्रुटि भयो।');
+    }
   };
 
   const publishedNews = allNews.filter(news => news.status === NEWS_STATUS.PUBLISHED);
