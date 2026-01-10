@@ -111,24 +111,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     { label: 'प्रयोगकर्ता', count: users.length, icon: '👥', color: 'bg-purple-500' },
   ];
 
+  // Helper function to resize and compress images
+  const compressImage = (file: File, callback: (result: string) => void) => {
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Resize logic: Max dimension 800px
+        const MAX_SIZE = 800;
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+           ctx.drawImage(img, 0, 0, width, height);
+           // Convert to JPEG with 0.7 quality to reduce size significantly
+           const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+           callback(dataUrl);
+        } else {
+            // Fallback if canvas fails
+            callback(readerEvent.target?.result as string);
+        }
+      };
+      img.src = readerEvent.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setNewsImage(reader.result as string);
-      reader.readAsDataURL(file);
+      compressImage(file, (compressedData) => {
+        setNewsImage(compressedData);
+      });
     }
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setTempLogo(result); // Update local temp state immediately for preview
-      };
-      reader.readAsDataURL(file);
+      compressImage(file, (compressedData) => {
+        setTempLogo(compressedData);
+      });
     }
   };
 
@@ -429,7 +468,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
                           <svg className="w-8 h-8 text-gray-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                         </div>
-                        <p className="text-sm font-bold text-gray-500">फोटो अपलोड गर्न यहाँ क्लिक गर्नुहोस्</p>
+                        <p className="text-sm font-bold text-gray-500">फोटो अपलोड गर्न यहाँ क्लिक गर्नुहोस् (Auto-Compressed)</p>
                       </div>
                     ) : (
                       <div className="relative w-full h-48 md:h-64 rounded-xl overflow-hidden shadow-inner bg-gray-100 group">
