@@ -19,6 +19,8 @@ interface AdminDashboardProps {
   onTwitterLinkUpdate: (link: string) => void;
   youtubeLink: string;
   onYoutubeLinkUpdate: (link: string) => void;
+  instagramLink: string;
+  onInstagramLinkUpdate: (link: string) => void;
   contactEmail: string;
   onContactEmailUpdate: (email: string) => void;
   contactPhone: string;
@@ -37,7 +39,7 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
   user, onLogout, logoUrl, onLogoUpdate, adsenseCode, onAdsenseUpdate, 
   siteTitle, onSiteTitleUpdate, siteSlogan, onSiteSloganUpdate,
-  facebookLink, onFacebookLinkUpdate, twitterLink, onTwitterLinkUpdate, youtubeLink, onYoutubeLinkUpdate,
+  facebookLink, onFacebookLinkUpdate, twitterLink, onTwitterLinkUpdate, youtubeLink, onYoutubeLinkUpdate, instagramLink, onInstagramLinkUpdate,
   contactEmail, onContactEmailUpdate, contactPhone, onContactPhoneUpdate,
   allNews, users, onAddNews, onApproveNews, onDeleteNews,
   onAddUser, onUpdateUser, onDeleteUser
@@ -76,6 +78,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [tempFacebookLink, setTempFacebookLink] = useState(facebookLink);
   const [tempTwitterLink, setTempTwitterLink] = useState(twitterLink);
   const [tempYoutubeLink, setTempYoutubeLink] = useState(youtubeLink);
+  const [tempInstagramLink, setTempInstagramLink] = useState(instagramLink);
   const [tempContactEmail, setTempContactEmail] = useState(contactEmail);
   const [tempContactPhone, setTempContactPhone] = useState(contactPhone);
 
@@ -89,9 +92,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTempFacebookLink(facebookLink);
     setTempTwitterLink(twitterLink);
     setTempYoutubeLink(youtubeLink);
+    setTempInstagramLink(instagramLink);
     setTempContactEmail(contactEmail);
     setTempContactPhone(contactPhone);
-  }, [logoUrl, adsenseCode, siteTitle, siteSlogan, facebookLink, twitterLink, youtubeLink, contactEmail, contactPhone]);
+  }, [logoUrl, adsenseCode, siteTitle, siteSlogan, facebookLink, twitterLink, youtubeLink, instagramLink, contactEmail, contactPhone]);
 
   // Password Change State
   const [currentPwd, setCurrentPwd] = useState('');
@@ -262,6 +266,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onFacebookLinkUpdate(tempFacebookLink);
     onTwitterLinkUpdate(tempTwitterLink);
     onYoutubeLinkUpdate(tempYoutubeLink);
+    onInstagramLinkUpdate(tempInstagramLink);
     onContactEmailUpdate(tempContactEmail);
     onContactPhoneUpdate(tempContactPhone);
     alert('सेटिङ्हरू सफलतापुर्वक सुरक्षित गरियो।');
@@ -636,29 +641,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-xl">📱</div>
                             <div>
                                <h3 className="text-xl font-black text-gray-900">सम्पर्क र सामाजिक सञ्जाल</h3>
-                               <p className="text-sm text-gray-500">फेसबुक, ट्विटर, युट्युब, इमेल र सम्पर्क नम्बर अपडेट गर्नुहोस्।</p>
+                               <p className="text-sm text-gray-500">फेसबुक, ट्विटर, युट्युब, इन्स्टाग्राम, इमेल र सम्पर्क नम्बर अपडेट गर्नुहोस्।</p>
                             </div>
                          </div>
 
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">फेसबुक लिंक</label>
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">फेसबुक लिंक (Facebook)</label>
                                <input type="text" value={tempFacebookLink} onChange={e => setTempFacebookLink(e.target.value)} placeholder="https://facebook.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
-                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">ट्विटर लिंक</label>
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">ट्विटर लिंक (Twitter)</label>
                                <input type="text" value={tempTwitterLink} onChange={e => setTempTwitterLink(e.target.value)} placeholder="https://twitter.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
-                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">युट्युब लिंक</label>
-                               <input type="text" value={tempYoutubeLink} onChange={e => setTempYoutubeLink(e.target.value)} placeholder="https://youtube.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">युट्युब च्यानल लिंक (YouTube)</label>
+                               <input type="text" value={tempYoutubeLink} onChange={e => setTempYoutubeLink(e.target.value)} placeholder="https://youtube.com/channel/..." className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
-                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">इमेल ठेगाना</label>
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">इन्स्टाग्राम लिंक (Instagram)</label>
+                               <input type="text" value={tempInstagramLink} onChange={e => setTempInstagramLink(e.target.value)} placeholder="https://instagram.com/drishti" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
+                            </div>
+                            <div>
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">इमेल ठेगाना (Email)</label>
                                <input type="email" value={tempContactEmail} onChange={e => setTempContactEmail(e.target.value)} placeholder="info@drishtikhabar.com" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                             <div>
-                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">सम्पर्क नम्बर</label>
+                               <label className="block text-xs font-bold text-gray-500 uppercase mb-2">सम्पर्क नम्बर (Phone)</label>
                                <input type="text" value={tempContactPhone} onChange={e => setTempContactPhone(e.target.value)} placeholder="+९७७-०१-xxxxxxx" className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none" />
                             </div>
                          </div>

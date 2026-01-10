@@ -12,7 +12,6 @@ import NewsDetailModal from './components/NewsDetailModal.tsx';
 import { NEWS_STATUS, MOCK_USERS, NEWS_PORTAL_SLOGAN } from './constants.ts';
 
 // Firebase Imports
-// Correctly import db and analytics from the centralized firebase.ts at root
 import { db, analytics } from './firebase.ts'; 
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, orderBy, setDoc } from "firebase/firestore";
 
@@ -20,15 +19,21 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, order
 function App() {
   const [user, setUser] = useState<any | null>(null);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  
+  // App Settings State
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [adsenseCode, setAdsenseCode] = useState<string>('');
   const [siteTitle, setSiteTitle] = useState('दृष्टि खबर');
   const [siteSlogan, setSiteSlogan] = useState(NEWS_PORTAL_SLOGAN);
+  
+  // Contact & Social State
   const [facebookLink, setFacebookLink] = useState('');
   const [twitterLink, setTwitterLink] = useState('');
   const [youtubeLink, setYoutubeLink] = useState('');
+  const [instagramLink, setInstagramLink] = useState(''); // Added Instagram
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  
   const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
   const [selectedNews, setSelectedNews] = useState<any | null>(null);
   const [activeCategory, setActiveCategory] = useState('सबै');
@@ -49,6 +54,7 @@ function App() {
         setFacebookLink(settingsData.facebookLink || '');
         setTwitterLink(settingsData.twitterLink || '');
         setYoutubeLink(settingsData.youtubeLink || '');
+        setInstagramLink(settingsData.instagramLink || '');
         setContactEmail(settingsData.contactEmail || '');
         setContactPhone(settingsData.contactPhone || '');
         console.log('Firebase App Settings fetched successfully (real-time).');
@@ -64,6 +70,7 @@ function App() {
             facebookLink: '',
             twitterLink: '',
             youtubeLink: '',
+            instagramLink: '',
             contactEmail: '',
             contactPhone: '',
           });
@@ -156,7 +163,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { logoUrl: newLogoUrl });
       setLogoUrl(newLogoUrl);
-      console.log('Logo URL updated in Firestore.');
     } catch (e) {
       console.error("Error updating logo URL: ", e);
       alert('लोगो URL अपडेट गर्दा त्रुटि भयो।');
@@ -167,7 +173,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { adsenseCode: code });
       setAdsenseCode(code);
-      console.log('Adsense code updated in Firestore.');
     } catch (e) {
       console.error("Error updating adsense code: ", e);
       alert('Adsense कोड अपडेट गर्दा त्रुटि भयो।');
@@ -178,7 +183,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { siteTitle: newTitle });
       setSiteTitle(newTitle);
-      console.log('Site Title updated in Firestore.');
     } catch (e) {
       console.error("Error updating site title: ", e);
       alert('साइटको शीर्षक अपडेट गर्दा त्रुटि भयो।');
@@ -189,7 +193,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { siteSlogan: newSlogan });
       setSiteSlogan(newSlogan);
-      console.log('Site Slogan updated in Firestore.');
     } catch (e) {
       console.error("Error updating site slogan: ", e);
       alert('साइटको स्लोगन अपडेट गर्दा त्रुटि भयो।');
@@ -200,7 +203,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { facebookLink: link });
       setFacebookLink(link);
-      console.log('Facebook link updated in Firestore.');
     } catch (e) {
       console.error("Error updating Facebook link: ", e);
       alert('फेसबुक लिङ्क अपडेट गर्दा त्रुटि भयो।');
@@ -211,7 +213,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { twitterLink: link });
       setTwitterLink(link);
-      console.log('Twitter link updated in Firestore.');
     } catch (e) {
       console.error("Error updating Twitter link: ", e);
       alert('ट्विटर लिङ्क अपडेट गर्दा त्रुटि भयो।');
@@ -222,10 +223,19 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { youtubeLink: link });
       setYoutubeLink(link);
-      console.log('YouTube link updated in Firestore.');
     } catch (e) {
       console.error("Error updating YouTube link: ", e);
       alert('युट्युब लिङ्क अपडेट गर्दा त्रुटि भयो।');
+    }
+  };
+
+  const handleInstagramLinkUpdate = async (link: string) => {
+    try {
+      await updateDoc(doc(db, "settings", "app_settings"), { instagramLink: link });
+      setInstagramLink(link);
+    } catch (e) {
+      console.error("Error updating Instagram link: ", e);
+      alert('इन्स्टाग्राम लिङ्क अपडेट गर्दा त्रुटि भयो।');
     }
   };
 
@@ -233,7 +243,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { contactEmail: email });
       setContactEmail(email);
-      console.log('Contact email updated in Firestore.');
     } catch (e) {
       console.error("Error updating contact email: ", e);
       alert('सम्पर्क इमेल अपडेट गर्दा त्रुटि भयो।');
@@ -244,7 +253,6 @@ function App() {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { contactPhone: phone });
       setContactPhone(phone);
-      console.log('Contact phone updated in Firestore.');
     } catch (e) {
       console.error("Error updating contact phone: ", e);
       alert('सम्पर्क फोन अपडेट गर्दा त्रुटि भयो।');
@@ -351,6 +359,8 @@ function App() {
         onTwitterLinkUpdate={handleTwitterLinkUpdate}
         youtubeLink={youtubeLink}
         onYoutubeLinkUpdate={handleYoutubeLinkUpdate}
+        instagramLink={instagramLink}
+        onInstagramLinkUpdate={handleInstagramLinkUpdate}
         contactEmail={contactEmail}
         onContactEmailUpdate={handleContactEmailUpdate}
         contactPhone={contactPhone}
@@ -380,6 +390,7 @@ function App() {
         facebookLink={facebookLink}
         twitterLink={twitterLink}
         youtubeLink={youtubeLink}
+        instagramLink={instagramLink}
         isSettingsLoaded={isSettingsLoaded}
       />
       <Navbar 
@@ -421,6 +432,7 @@ function App() {
         facebookLink={facebookLink}
         twitterLink={twitterLink}
         youtubeLink={youtubeLink}
+        instagramLink={instagramLink}
       />
 
       <LoginModal 
