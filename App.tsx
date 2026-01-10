@@ -320,6 +320,17 @@ function App() {
     }
   };
 
+  const handleUpdateNewsContent = async (newsId: string, updatedData: any) => {
+    try {
+      const newsRef = doc(db, "news", newsId);
+      await updateDoc(newsRef, updatedData);
+      alert('समाचार अपडेट गरियो।');
+    } catch (e) {
+      console.error("Error updating news: ", e);
+      alert('समाचार अपडेट गर्दा त्रुटि भयो।');
+    }
+  };
+
   const handleApproveNews = async (newsId: string) => {
     try {
       const newsRef = doc(db, "news", newsId);
@@ -413,6 +424,7 @@ function App() {
         allNews={allNews}
         users={users}
         onAddNews={handleAddNews}
+        onUpdateNewsContent={handleUpdateNewsContent}
         onApproveNews={handleApproveNews}
         onDeleteNews={handleDeleteNews}
         onAddUser={handleAddUser}

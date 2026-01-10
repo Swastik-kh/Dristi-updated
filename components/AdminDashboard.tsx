@@ -29,6 +29,7 @@ interface AdminDashboardProps {
   allNews: any[];
   users: any[];
   onAddNews: (news: any) => void;
+  onUpdateNewsContent: (id: string, news: any) => void; // New prop for updating news
   onApproveNews: (id: string) => void; // Changed to string for Firestore doc ID
   onDeleteNews: (id: string) => void; // Changed to string for Firestore doc ID
   onAddUser: (user: any) => void;
@@ -41,7 +42,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   siteTitle, onSiteTitleUpdate, siteSlogan, onSiteSloganUpdate,
   facebookLink, onFacebookLinkUpdate, twitterLink, onTwitterLinkUpdate, youtubeLink, onYoutubeLinkUpdate, instagramLink, onInstagramLinkUpdate,
   contactEmail, onContactEmailUpdate, contactPhone, onContactPhoneUpdate,
-  allNews, users, onAddNews, onApproveNews, onDeleteNews,
+  allNews, users, onAddNews, onUpdateNewsContent, onApproveNews, onDeleteNews,
   onAddUser, onUpdateUser, onDeleteUser
 }) => {
   const [activeTab, setActiveTab] = useState(user.permissions?.includes(PERMISSIONS.VIEW_DASHBOARD) ? 'dashboard' : 'post');
@@ -59,6 +60,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [showAuthor, setShowAuthor] = useState(true);
   const [newsImage, setNewsImage] = useState<string | null>(null);
   const [publishImmediately, setPublishImmediately] = useState(false); // State for immediate publish
+  
+  // Edit News State
+  const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
 
   // User Form State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -177,6 +181,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleEditNewsClick = (news: any) => {
+    setNewsTitle(news.title);
+    setNewsDesc(news.description);
+    setNewsCat(news.category);
+    setNewsImage(news.imageUrl);
+    setShowInTicker(news.showInTicker || false);
+    setShowAuthor(news.showAuthor || false);
+    // If news is already published, check the box.
+    setPublishImmediately(news.status === NEWS_STATUS.PUBLISHED);
+    
+    setEditingNewsId(news.id);
+    setActiveTab('post');
+    window.scrollTo(0, 0);
+  };
+
   const handlePostNews = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsImage) {
@@ -189,26 +208,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const canPublish = hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER;
     const finalStatus = (canPublish && publishImmediately) ? NEWS_STATUS.PUBLISHED : NEWS_STATUS.PENDING;
 
-    const newNews = {
-      id: Date.now(), // This ID will be used as creationTimestamp in Firestore
+    const commonData = {
       title: newsTitle,
       description: newsDesc,
       category: newsCat,
       imageUrl: newsImage,
-      author: user.name,
-      date: '२०८१/११/२३', // Consider making this dynamic based on client-side date or server timestamp
-      status: finalStatus,
-      isPopular: false,
       showInTicker,
-      showAuthor
+      showAuthor,
+      status: finalStatus
     };
-    onAddNews(newNews);
-    
-    // Provide feedback based on what happened
-    if (finalStatus === NEWS_STATUS.PUBLISHED) {
-      alert('समाचार सफलतापूर्वक प्रकाशित भयो।');
+
+    if (editingNewsId) {
+       // UPDATE Mode
+       onUpdateNewsContent(editingNewsId, commonData);
+       setEditingNewsId(null);
     } else {
-      alert('समाचार पेन्डिङमा राखियो। प्रधान सम्पादकले स्वीकृत गरेपछि यो प्रकाशित हुनेछ।');
+       // CREATE Mode
+       const newNews = {
+         id: Date.now(), // This ID will be used as creationTimestamp in Firestore
+         author: user.name,
+         date: '२०८१/११/२३', // Consider making this dynamic based on client-side date or server timestamp
+         isPopular: false,
+         ...commonData
+       };
+       onAddNews(newNews);
+    }
+    
+    // Provide feedback based on what happened (Add alert logic handled in App.tsx mostly, but we can do simple alert if creating)
+    if (!editingNewsId) {
+        if (finalStatus === NEWS_STATUS.PUBLISHED) {
+        alert('समाचार सफलतापूर्वक प्रकाशित भयो।');
+        } else {
+        alert('समाचार पेन्डिङमा राखियो। प्रधान सम्पादकले स्वीकृत गरेपछि यो प्रकाशित हुनेछ।');
+        }
     }
     
     setNewsTitle('');
@@ -321,6 +353,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);
+    setEditingNewsId(null); // Clear editing state when switching tabs
+    // Reset form when switching tabs if not in post mode
+    if (tab !== 'post') {
+        setNewsTitle('');
+        setNewsDesc('');
+        setNewsCat(CATEGORIES[0]);
+        setShowInTicker(true);
+        setShowAuthor(true);
+        setNewsImage(null);
+        setPublishImmediately(false);
+    }
     setIsSidebarOpen(false);
   };
 
@@ -400,6 +443,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <h2 className="text-lg md:text-xl font-bold text-gray-800">
               {activeTab === 'users' ? 'प्रयोगकर्ता व्यवस्थापन' : 
                activeTab === 'settings' ? (activeSettingsSubTab === 'general' ? 'वेबसाइट सेटिङ्हरू' : 'सुरक्षा सेटिङ्हरू') : 
+               activeTab === 'post' ? (editingNewsId ? 'समाचार सम्पादन (Update)' : 'नयाँ समाचार (Create)') :
                activeTab.toUpperCase()}
             </h2>
           </div>
@@ -419,7 +463,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {activeTab === 'post' && hasPermission(PERMISSIONS.POST_NEWS) && (
             <div className="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-gray-100 max-w-5xl mx-auto">
-              <h3 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">नयाँ समाचार थप्नुहोस्</h3>
+              <div className="mb-6 flex justify-between items-center">
+                <h3 className="text-xl md:text-2xl font-bold text-gray-800">
+                    {editingNewsId ? 'समाचार सम्पादन गर्नुहोस्' : 'नयाँ समाचार थप्नुहोस्'}
+                </h3>
+                {editingNewsId && (
+                    <button 
+                        onClick={() => {
+                            setEditingNewsId(null);
+                            setNewsTitle('');
+                            setNewsDesc('');
+                            setNewsCat(CATEGORIES[0]);
+                            setNewsImage(null);
+                        }}
+                        className="text-sm text-red-600 font-bold hover:underline"
+                    >
+                        नयाँ लेख्नुहोस् (Cancel Edit)
+                    </button>
+                )}
+              </div>
               <form onSubmit={handlePostNews} className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">शीर्षक (Title)</label>
@@ -493,7 +555,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                 <div className="pt-4">
                   <button type="submit" className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 shadow-lg transform active:scale-95 transition-all">
-                      {hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish)' : 'सुरक्षित गर्नुहोस् (Save to Pending)'}
+                      {editingNewsId 
+                        ? 'समाचार अपडेट गर्नुहोस् (Update News)' 
+                        : (hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish)' : 'सुरक्षित गर्नुहोस् (Save to Pending)')
+                      }
                   </button>
                 </div>
               </form>
@@ -536,6 +601,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                              {news.status === NEWS_STATUS.PENDING && hasPermission(PERMISSIONS.MANAGE_NEWS) && (
                                <button onClick={() => onApproveNews(news.id)} className="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 shadow-sm transition-colors">स्वीकृत गर्नुहोस्</button>
                              )}
+                             {/* Edit Button for Chief Editor / Managers */}
+                             {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
+                               <button onClick={() => handleEditNewsClick(news)} className="text-blue-600 hover:text-blue-800 text-xs font-bold transition-colors">सम्पादन</button>
+                             )}
+                             {/* Delete Button for Chief Editor / Managers */}
                              {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
                                <button onClick={() => onDeleteNews(news.id)} className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors">हटाउनुहोस्</button>
                              )}
