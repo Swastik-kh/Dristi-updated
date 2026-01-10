@@ -72,6 +72,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   
   // Edit News State
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
+  
+  // Filter State for "All News" Tab
+  const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
   // User Form State
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -257,14 +260,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
        onAddNews(newNews);
     }
     
-    // Provide feedback based on what happened (Add alert logic handled in App.tsx mostly, but we can do simple alert if creating)
-    if (!editingNewsId) {
-        if (finalStatus === NEWS_STATUS.PUBLISHED) {
-        alert('समाचार सफलतापूर्वक प्रकाशित भयो।');
-        } else {
-        alert('समाचार पेन्डिङमा राखियो। प्रधान सम्पादकले स्वीकृत गरेपछि यो प्रकाशित हुनेछ।');
-        }
-    }
+    // Alert is handled in App.tsx (handleAddNews/onUpdateNewsContent) 
+    // but we clear the form here
     
     setNewsTitle('');
     setNewsDesc('');
@@ -276,6 +273,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     setActiveTab('all-news');
+    setFilterStatus('ALL'); // Reset filter to see the new item
   };
 
   const openAddUser = () => {
@@ -400,6 +398,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
+
+  // Filter News Logic
+  const filteredNews = allNews.filter(n => {
+    if (filterStatus === 'ALL') return true;
+    return n.status === filterStatus;
+  });
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden relative">
@@ -582,7 +586,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <button type="submit" className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 shadow-lg transform active:scale-95 transition-all">
                       {editingNewsId 
                         ? 'समाचार अपडेट गर्नुहोस् (Update News)' 
-                        : (hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish)' : 'सुरक्षित गर्नुहोस् (Save to Pending)')
+                        : (hasPermission(PERMISSIONS.MANAGE_NEWS) && user.role !== ROLES.REPORTER && publishImmediately ? 'प्रकाशित गर्नुहोस् (Publish Now)' : 'डाटाबेसमा सेभ गर्नुहोस् (Save to Pending)')
                       }
                   </button>
                 </div>
@@ -592,10 +596,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {activeTab === 'all-news' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-               <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
-                  <h3 className="font-bold text-gray-800">समाचारहरूको व्यवस्थापन</h3>
-                  <div className="text-xs font-medium text-gray-500 italic">स्वीकृत समाचार मात्र सर्वसाधारणले हेर्न सक्छन्।</div>
+               <div className="p-4 border-b bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                  <div>
+                    <h3 className="font-bold text-gray-800">समाचारहरूको व्यवस्थापन</h3>
+                    <div className="text-xs font-medium text-gray-500 italic">स्वीकृत समाचार मात्र सर्वसाधारणले हेर्न सक्छन्।</div>
+                  </div>
+                  
+                  {/* Status Filter */}
+                  <div className="flex bg-gray-100 p-1 rounded-lg">
+                     <button 
+                       onClick={() => setFilterStatus('ALL')}
+                       className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'ALL' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                     >
+                        सबै (All)
+                     </button>
+                     <button 
+                       onClick={() => setFilterStatus(NEWS_STATUS.PENDING)}
+                       className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === NEWS_STATUS.PENDING ? 'bg-yellow-400 shadow-sm text-yellow-900' : 'text-gray-500 hover:text-gray-700'}`}
+                     >
+                        पेन्डिङ (Approve गर्न बाँकी)
+                     </button>
+                     <button 
+                       onClick={() => setFilterStatus(NEWS_STATUS.PUBLISHED)}
+                       className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === NEWS_STATUS.PUBLISHED ? 'bg-green-500 shadow-sm text-white' : 'text-gray-500 hover:text-gray-700'}`}
+                     >
+                        प्रकाशित (Published)
+                     </button>
+                  </div>
                </div>
+               
                <div className="overflow-x-auto">
                   <table className="w-full text-left min-w-[700px]">
                     <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold">
@@ -608,36 +637,44 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {allNews.map((news) => (
-                        <tr key={news.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4">
-                             <div className="w-16 h-10 rounded overflow-hidden bg-gray-100 border">
-                                <img src={news.imageUrl} alt="" className="w-full h-full object-cover" />
-                             </div>
-                          </td>
-                          <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-xs">{news.title}</td>
-                          <td className="px-6 py-4 text-gray-600">{news.author}</td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${news.status === NEWS_STATUS.PUBLISHED ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                              {news.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                             {news.status === NEWS_STATUS.PENDING && hasPermission(PERMISSIONS.MANAGE_NEWS) && (
-                               <button onClick={() => onApproveNews(news.id)} className="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 shadow-sm transition-colors">स्वीकृत गर्नुहोस्</button>
-                             )}
-                             {/* Edit Button for Chief Editor / Managers */}
-                             {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
-                               <button onClick={() => handleEditNewsClick(news)} className="text-blue-600 hover:text-blue-800 text-xs font-bold transition-colors">सम्पादन</button>
-                             )}
-                             {/* Delete Button for Chief Editor / Managers */}
-                             {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
-                               <button onClick={() => onDeleteNews(news.id)} className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors">हटाउनुहोस्</button>
-                             )}
-                             {!hasPermission(PERMISSIONS.MANAGE_NEWS) && <span className="text-xs text-gray-400 italic">अनुमति छैन</span>}
-                          </td>
-                        </tr>
-                      ))}
+                      {filteredNews.length > 0 ? (
+                        filteredNews.map((news) => (
+                            <tr key={news.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4">
+                                <div className="w-16 h-10 rounded overflow-hidden bg-gray-100 border">
+                                    <img src={news.imageUrl} alt="" className="w-full h-full object-cover" />
+                                </div>
+                            </td>
+                            <td className="px-6 py-4 font-medium text-gray-900 truncate max-w-xs">{news.title}</td>
+                            <td className="px-6 py-4 text-gray-600">{news.author}</td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${news.status === NEWS_STATUS.PUBLISHED ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                {news.status}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                                {news.status === NEWS_STATUS.PENDING && hasPermission(PERMISSIONS.MANAGE_NEWS) && (
+                                <button onClick={() => onApproveNews(news.id)} className="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 shadow-sm transition-colors animate-pulse">स्वीकृत गर्नुहोस्</button>
+                                )}
+                                {/* Edit Button for Chief Editor / Managers */}
+                                {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
+                                <button onClick={() => handleEditNewsClick(news)} className="text-blue-600 hover:text-blue-800 text-xs font-bold transition-colors">सम्पादन</button>
+                                )}
+                                {/* Delete Button for Chief Editor / Managers */}
+                                {hasPermission(PERMISSIONS.MANAGE_NEWS) && (
+                                <button onClick={() => onDeleteNews(news.id)} className="text-red-500 hover:text-red-700 text-xs font-bold transition-colors">हटाउनुहोस्</button>
+                                )}
+                                {!hasPermission(PERMISSIONS.MANAGE_NEWS) && <span className="text-xs text-gray-400 italic">अनुमति छैन</span>}
+                            </td>
+                            </tr>
+                        ))
+                      ) : (
+                          <tr>
+                              <td colSpan={5} className="px-6 py-8 text-center text-gray-400 italic text-sm">
+                                  कुनै समाचार फेला परेन।
+                              </td>
+                          </tr>
+                      )}
                     </tbody>
                   </table>
                </div>

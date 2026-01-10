@@ -355,7 +355,8 @@ function App() {
         ...dataToStore,
         creationTimestamp: id,
       });
-      alert('समाचार सुरक्षित गरियो। सम्पादकले स्वीकृत गरेपछि यो प्रकाशित हुनेछ।');
+      // UPDATED MESSAGE: Explicitly stating it's saved to DB
+      alert('समाचार डाटाबेसमा सुरक्षित गरियो (Pending)। अब तपाईंले "सबै समाचार" ट्याबबाट यसलाई हेर्न र स्वीकृत गर्न सक्नुहुन्छ।');
     } catch (e) {
       console.error("Error adding document: ", e);
       alert('समाचार थप्दा त्रुटि भयो। कृपया फोटोको साइज घटाएर पुनः प्रयास गर्नुहोस्।');
@@ -377,7 +378,7 @@ function App() {
     try {
       const newsRef = doc(db, "news", newsId);
       await updateDoc(newsRef, { status: NEWS_STATUS.PUBLISHED });
-      alert('समाचार स्वीकृत गरियो।');
+      alert('समाचार स्वीकृत र प्रकाशित गरियो।');
     } catch (e) {
       console.error("Error approving news: ", e);
       alert('समाचार स्वीकृत गर्दा त्रुटि भयो।');
