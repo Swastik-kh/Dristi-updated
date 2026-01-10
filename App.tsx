@@ -26,6 +26,10 @@ function App() {
   const [siteTitle, setSiteTitle] = useState('दृष्टि खबर');
   const [siteSlogan, setSiteSlogan] = useState(NEWS_PORTAL_SLOGAN);
   
+  // Header Ad Settings
+  const [headerAdImage, setHeaderAdImage] = useState<string | null>(null);
+  const [headerAdType, setHeaderAdType] = useState<'code' | 'image'>('code');
+
   // Contact & Social State
   const [facebookLink, setFacebookLink] = useState('');
   const [twitterLink, setTwitterLink] = useState('');
@@ -50,6 +54,10 @@ function App() {
         const settingsData = docSnap.data();
         setLogoUrl(settingsData.logoUrl || null);
         setAdsenseCode(settingsData.adsenseCode || '');
+        // New Header Ad Settings
+        setHeaderAdImage(settingsData.headerAdImage || null);
+        setHeaderAdType(settingsData.headerAdType || 'code');
+
         setSiteTitle(settingsData.siteTitle || 'दृष्टि खबर');
         setSiteSlogan(settingsData.siteSlogan || NEWS_PORTAL_SLOGAN);
         setFacebookLink(settingsData.facebookLink || '');
@@ -63,6 +71,8 @@ function App() {
           await setDoc(settingsDocRef, {
             logoUrl: null,
             adsenseCode: '',
+            headerAdImage: null,
+            headerAdType: 'code',
             siteTitle: 'दृष्टि खबर',
             siteSlogan: NEWS_PORTAL_SLOGAN,
             facebookLink: '',
@@ -200,6 +210,28 @@ function App() {
     }
   };
 
+  // New Header Ad Handlers
+  const handleHeaderAdImageUpdate = async (url: string | null) => {
+    try {
+      await updateDoc(doc(db, "settings", "app_settings"), { headerAdImage: url });
+      setHeaderAdImage(url);
+    } catch (e) {
+      console.error("Error updating header ad image: ", e);
+      alert('हेडर विज्ञापन फोटो अपडेट गर्दा त्रुटि भयो।');
+    }
+  };
+
+  const handleHeaderAdTypeUpdate = async (type: 'code' | 'image') => {
+    try {
+      await updateDoc(doc(db, "settings", "app_settings"), { headerAdType: type });
+      setHeaderAdType(type);
+    } catch (e) {
+      console.error("Error updating header ad type: ", e);
+      alert('हेडर विज्ञापन प्रकार अपडेट गर्दा त्रुटि भयो।');
+    }
+  };
+
+
   const handleSiteTitleUpdate = async (newTitle: string) => {
     try {
       await updateDoc(doc(db, "settings", "app_settings"), { siteTitle: newTitle });
@@ -283,6 +315,16 @@ function App() {
 
   const handleCategoryChange = (category: string) => {
     setActiveCategory(category);
+    // If news is open, go back to home on category click
+    if (selectedNews) {
+        setSelectedNews(null);
+        try {
+            const newUrl = `${window.location.origin}${window.location.pathname}`;
+            window.history.pushState({ path: newUrl }, '', newUrl);
+        } catch (e) {
+            console.warn("Nav warning", e);
+        }
+    }
   };
 
   const handleNewsOpen = (news: any) => {
@@ -405,6 +447,13 @@ function App() {
         onLogoUpdate={handleLogoUpdate}
         adsenseCode={adsenseCode}
         onAdsenseUpdate={handleAdsenseUpdate}
+        
+        // Header Ad Props
+        headerAdImage={headerAdImage}
+        onHeaderAdImageUpdate={handleHeaderAdImageUpdate}
+        headerAdType={headerAdType}
+        onHeaderAdTypeUpdate={handleHeaderAdTypeUpdate}
+
         siteTitle={siteTitle}
         onSiteTitleUpdate={handleSiteTitleUpdate}
         siteSlogan={siteSlogan}
@@ -442,6 +491,10 @@ function App() {
         onLogout={handleLogout} 
         logoUrl={logoUrl}
         adsenseCode={adsenseCode}
+        // Header Ad Props Passed
+        headerAdImage={headerAdImage}
+        headerAdType={headerAdType}
+        
         siteTitle={siteTitle}
         siteSlogan={siteSlogan}
         facebookLink={facebookLink}
@@ -461,28 +514,38 @@ function App() {
       <main className="container mx-auto px-4 py-8 flex-grow">
         <Advertisement adsenseCode={adsenseCode} className="mb-8 h-32 md:h-40 lg:h-48" />
 
-        <LatestNewsTicker 
-          onNewsClick={handleNewsOpen} 
-          newsItems={tickerNews} 
-        />
+        {/* Conditional Rendering: Show NewsDetail OR Dashboard */}
+        {selectedNews ? (
+             <NewsDetailModal 
+               news={selectedNews} 
+               onClose={handleNewsClose} 
+             />
+        ) : (
+            <>
+                <LatestNewsTicker 
+                  onNewsClick={handleNewsOpen} 
+                  newsItems={tickerNews} 
+                />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="main-news-area">
-          <div className="lg:col-span-2">
-            <MainNewsSection 
-              onNewsClick={handleNewsOpen} 
-              activeCategory={activeCategory} 
-              newsItems={publishedNews}
-            />
-            <Advertisement adsenseCode={adsenseCode} className="my-8 h-24 md:h-32" />
-          </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="main-news-area">
+                  <div className="lg:col-span-2">
+                    <MainNewsSection 
+                      onNewsClick={handleNewsOpen} 
+                      activeCategory={activeCategory} 
+                      newsItems={publishedNews}
+                    />
+                    <Advertisement adsenseCode={adsenseCode} className="my-8 h-24 md:h-32" />
+                  </div>
 
-          <div className="lg:col-span-1">
-            <PopularNewsSidebar 
-              onNewsClick={handleNewsOpen} 
-              newsItems={publishedNews.filter(n => n.isPopular)}
-            />
-          </div>
-        </div>
+                  <div className="lg:col-span-1">
+                    <PopularNewsSidebar 
+                      onNewsClick={handleNewsOpen} 
+                      newsItems={publishedNews.filter(n => n.isPopular)}
+                    />
+                  </div>
+                </div>
+            </>
+        )}
       </main>
 
       <Footer 
@@ -499,11 +562,6 @@ function App() {
         onClose={() => setIsLoginModalOpen(false)} 
         onLoginSuccess={handleLoginSuccess}
         users={users}
-      />
-
-      <NewsDetailModal 
-        news={selectedNews} 
-        onClose={handleNewsClose} 
       />
     </div>
   );

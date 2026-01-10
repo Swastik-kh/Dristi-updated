@@ -8,6 +8,8 @@ interface HeaderProps {
   onLogout: () => void;
   logoUrl?: string | null;
   adsenseCode?: string;
+  headerAdImage?: string | null;
+  headerAdType?: 'code' | 'image';
   siteTitle: string; 
   siteSlogan: string; 
   facebookLink: string;
@@ -18,7 +20,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  user, onLoginClick, onLogout, logoUrl, adsenseCode, siteTitle, siteSlogan,
+  user, onLoginClick, onLogout, logoUrl, adsenseCode, headerAdImage, headerAdType, siteTitle, siteSlogan,
   facebookLink, twitterLink, youtubeLink, instagramLink, isSettingsLoaded 
 }) => {
   const nepaliDate = useMemo(() => getExactNepaliDate(), []);
@@ -125,18 +127,24 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Advertisement Placeholder / AdSense Slot */}
+          {/* Advertisement Placeholder / AdSense Slot / Image Banner */}
           <div className="w-full lg:w-auto flex justify-center">
-            {adsenseCode ? (
-               <div 
-                 className="w-full max-w-md lg:w-96 h-20 md:h-24 overflow-hidden flex items-center justify-center"
-                 dangerouslySetInnerHTML={{ __html: adsenseCode }}
-               />
-            ) : (
-               <div className="w-full max-w-md lg:w-96 h-20 md:h-24 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 text-[10px] md:text-xs border border-dashed border-gray-300">
-                 क्षेत्र विज्ञापनको लागि सुरक्षित छ (९७०x९०)
-               </div>
-            )}
+             {headerAdType === 'image' && headerAdImage ? (
+                <div className="w-full max-w-md lg:w-96 h-20 md:h-24 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
+                   <img src={headerAdImage} alt="Advertisement" className="w-full h-full object-cover" />
+                </div>
+             ) : (
+                adsenseCode ? (
+                  <div 
+                    className="w-full max-w-md lg:w-96 h-20 md:h-24 overflow-hidden flex items-center justify-center"
+                    dangerouslySetInnerHTML={{ __html: adsenseCode }}
+                  />
+               ) : (
+                  <div className="w-full max-w-md lg:w-96 h-20 md:h-24 bg-gray-50 rounded-lg flex items-center justify-center text-gray-400 text-[10px] md:text-xs border border-dashed border-gray-300">
+                    क्षेत्र विज्ञापनको लागि सुरक्षित छ (९७०x९०)
+                  </div>
+               )
+             )}
           </div>
         </div>
       </div>

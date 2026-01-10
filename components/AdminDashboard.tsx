@@ -8,6 +8,13 @@ interface AdminDashboardProps {
   onLogoUpdate: (url: string) => void;
   adsenseCode: string;
   onAdsenseUpdate: (code: string) => void;
+  
+  // Header Ad Props
+  headerAdImage: string | null;
+  onHeaderAdImageUpdate: (url: string | null) => void;
+  headerAdType: 'code' | 'image';
+  onHeaderAdTypeUpdate: (type: 'code' | 'image') => void;
+
   siteTitle: string; // New prop for site title
   onSiteTitleUpdate: (title: string) => void; // Callback for site title update
   siteSlogan: string; // New prop for site slogan
@@ -39,6 +46,7 @@ interface AdminDashboardProps {
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
   user, onLogout, logoUrl, onLogoUpdate, adsenseCode, onAdsenseUpdate, 
+  headerAdImage, onHeaderAdImageUpdate, headerAdType, onHeaderAdTypeUpdate,
   siteTitle, onSiteTitleUpdate, siteSlogan, onSiteSloganUpdate,
   facebookLink, onFacebookLinkUpdate, twitterLink, onTwitterLinkUpdate, youtubeLink, onYoutubeLinkUpdate, instagramLink, onInstagramLinkUpdate,
   contactEmail, onContactEmailUpdate, contactPhone, onContactPhoneUpdate,
@@ -51,6 +59,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const headerAdInputRef = useRef<HTMLInputElement>(null);
   
   // News Form State
   const [newsTitle, setNewsTitle] = useState('');
@@ -78,6 +87,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Local states for settings inputs, to be synced with props on save
   const [tempLogo, setTempLogo] = useState<string | null>(logoUrl);
   const [tempAdsense, setTempAdsense] = useState<string>(adsenseCode);
+  const [tempHeaderAdImage, setTempHeaderAdImage] = useState<string | null>(headerAdImage);
+  const [tempHeaderAdType, setTempHeaderAdType] = useState<'code' | 'image'>(headerAdType);
+
   const [tempSiteTitle, setTempSiteTitle] = useState(siteTitle);
   const [tempSiteSlogan, setTempSiteSlogan] = useState(siteSlogan);
   const [tempFacebookLink, setTempFacebookLink] = useState(facebookLink);
@@ -92,6 +104,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   useEffect(() => {
     setTempLogo(logoUrl);
     setTempAdsense(adsenseCode);
+    setTempHeaderAdImage(headerAdImage);
+    setTempHeaderAdType(headerAdType);
     setTempSiteTitle(siteTitle);
     setTempSiteSlogan(siteSlogan);
     setTempFacebookLink(facebookLink);
@@ -100,7 +114,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTempInstagramLink(instagramLink);
     setTempContactEmail(contactEmail);
     setTempContactPhone(contactPhone);
-  }, [logoUrl, adsenseCode, siteTitle, siteSlogan, facebookLink, twitterLink, youtubeLink, instagramLink, contactEmail, contactPhone]);
+  }, [logoUrl, adsenseCode, headerAdImage, headerAdType, siteTitle, siteSlogan, facebookLink, twitterLink, youtubeLink, instagramLink, contactEmail, contactPhone]);
 
   // Password Change State
   const [currentPwd, setCurrentPwd] = useState('');
@@ -172,6 +186,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (file) {
       compressImage(file, (compressedData) => {
         setTempLogo(compressedData);
+      });
+    }
+  };
+
+  const handleHeaderAdImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      compressImage(file, (compressedData) => {
+        setTempHeaderAdImage(compressedData);
       });
     }
   };
@@ -340,6 +363,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSaveGeneralSettings = () => {
     onLogoUpdate(tempLogo || null); // Pass null if tempLogo is empty
     onAdsenseUpdate(tempAdsense);
+    onHeaderAdImageUpdate(tempHeaderAdImage);
+    onHeaderAdTypeUpdate(tempHeaderAdType);
     onSiteTitleUpdate(tempSiteTitle);
     onSiteSloganUpdate(tempSiteSlogan);
     onFacebookLinkUpdate(tempFacebookLink);
@@ -796,24 +821,78 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                          <div className="flex items-center space-x-4 mb-8">
                             <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-xl flex items-center justify-center text-xl">📢</div>
                             <div>
-                               <h3 className="text-xl font-black text-gray-900">Google AdSense व्यवस्थापन</h3>
-                               <p className="text-sm text-gray-500">तपाईंको AdSense Script कोड यहाँ राख्नुहोस्।</p>
+                               <h3 className="text-xl font-black text-gray-900">हेडर विज्ञापन (Header Advertisement)</h3>
+                               <p className="text-sm text-gray-500">वेबसाइटको माथिल्लो भाग (लोगोको छेउ) मा देखिने विज्ञापन व्यवस्थापन।</p>
                             </div>
                          </div>
 
-                         <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase mb-2">AdSense Script कोड</label>
-                            <textarea 
-                               value={tempAdsense} 
-                               onChange={e => setTempAdsense(e.target.value)}
-                               rows={6}
-                               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none font-mono text-xs bg-gray-50" 
-                               placeholder="<script async src='https://pagead2.googlesyndication.com/...'></script>"
-                            ></textarea>
-                            <div className="mt-2 flex items-start space-x-2 text-yellow-600 bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                                <span className="text-lg">⚠️</span>
-                                <p className="text-[10px] leading-relaxed">यो कोड सिधै वेबसाइटको विज्ञापन स्लटहरूमा प्रदर्शित हुनेछ। कृपया आधिकारिक AdSense कोड मात्र प्रयोग गर्नुहोस्।</p>
+                         <div className="space-y-6">
+                            {/* Ad Type Toggle */}
+                            <div className="flex space-x-6 border-b border-gray-100 pb-4">
+                               <label className="flex items-center space-x-2 cursor-pointer">
+                                  <input 
+                                     type="radio" 
+                                     name="headerAdType" 
+                                     value="code" 
+                                     checked={tempHeaderAdType === 'code'} 
+                                     onChange={() => setTempHeaderAdType('code')}
+                                     className="w-5 h-5 text-red-600 border-gray-300 focus:ring-red-500" 
+                                  />
+                                  <span className={`font-bold text-sm ${tempHeaderAdType === 'code' ? 'text-gray-900' : 'text-gray-500'}`}>Script / Text Code</span>
+                               </label>
+                               <label className="flex items-center space-x-2 cursor-pointer">
+                                  <input 
+                                     type="radio" 
+                                     name="headerAdType" 
+                                     value="image" 
+                                     checked={tempHeaderAdType === 'image'} 
+                                     onChange={() => setTempHeaderAdType('image')}
+                                     className="w-5 h-5 text-red-600 border-gray-300 focus:ring-red-500" 
+                                  />
+                                  <span className={`font-bold text-sm ${tempHeaderAdType === 'image' ? 'text-gray-900' : 'text-gray-500'}`}>Image Banner</span>
+                               </label>
                             </div>
+
+                            {/* Conditional Input */}
+                            {tempHeaderAdType === 'code' ? (
+                               <div>
+                                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">AdSense / HTML Script कोड</label>
+                                  <textarea 
+                                     value={tempAdsense} 
+                                     onChange={e => setTempAdsense(e.target.value)}
+                                     rows={6}
+                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none font-mono text-xs bg-gray-50" 
+                                     placeholder="<script async src='https://pagead2.googlesyndication.com/...'></script>"
+                                  ></textarea>
+                                  <div className="mt-2 text-[10px] text-gray-500 italic">
+                                     नोट: यो कोड हेडरमा र 'Advertisement' कम्पोनेन्ट प्रयोग भएका अन्य ठाउँहरूमा (यदि ओभरराइड गरिएको छैन भने) प्रयोग हुन सक्छ।
+                                  </div>
+                               </div>
+                            ) : (
+                               <div>
+                                   <label className="block text-xs font-bold text-gray-500 uppercase mb-3">विज्ञापन ब्यानर फोटो</label>
+                                   <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-8 p-6 bg-gray-50 rounded-2xl border border-gray-200">
+                                      <div className="w-full md:w-96 h-24 bg-white rounded-lg border flex items-center justify-center p-2 shadow-sm overflow-hidden">
+                                         {tempHeaderAdImage ? (
+                                            <img src={tempHeaderAdImage} alt="Ad Preview" className="w-full h-full object-contain" />
+                                         ) : (
+                                            <div className="text-gray-300 font-bold italic text-xs">No Image Selected</div>
+                                         )}
+                                      </div>
+                                      <div className="flex-1 space-y-3 text-center md:text-left">
+                                         <p className="text-xs text-gray-500">सिफारिस गरिएको साइज: ९७०x९० पिक्सेल (Landscape).</p>
+                                         <button 
+                                            onClick={() => headerAdInputRef.current?.click()}
+                                            type="button" 
+                                            className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-bold hover:bg-gray-100 transition-colors shadow-sm"
+                                         >
+                                            फोटो अपलोड गर्नुहोस्
+                                         </button>
+                                         <input ref={headerAdInputRef} type="file" accept="image/*" onChange={handleHeaderAdImageChange} className="hidden" />
+                                      </div>
+                                   </div>
+                               </div>
+                            )}
                          </div>
                       </div>
 
