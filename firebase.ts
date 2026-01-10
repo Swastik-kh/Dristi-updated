@@ -1,5 +1,5 @@
 import { initializeApp, FirebaseApp, getApps } from "firebase/app";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore, Firestore, initializeFirestore } from "firebase/firestore";
 import { getAnalytics, Analytics } from "firebase/analytics";
 
 interface FirebaseConfig {
@@ -32,14 +32,18 @@ try {
   // Check if Firebase app is already initialized to prevent errors in development (StrictMode/HMR)
   if (getApps().length === 0) {
     app = initializeApp(firebaseConfig);
-    console.log("Firebase app initialized successfully.");
+    // Use initializeFirestore to set experimentalForceLongPolling to true
+    // This helps avoid "transport errored" warnings by using a more stable (though slightly slower) connection method
+    db = initializeFirestore(app, {
+      experimentalForceLongPolling: true,
+    });
+    console.log("Firebase app initialized successfully with stable connection settings.");
   } else {
     // If already initialized, get the existing app instance
     app = getApps()[0];
+    db = getFirestore(app);
     console.log("Firebase app already initialized, reusing existing instance.");
   }
-  
-  db = getFirestore(app);
   
   // Only initialize analytics if measurementId is provided and appears valid
   if (firebaseConfig.measurementId && firebaseConfig.measurementId.startsWith('G-')) {
