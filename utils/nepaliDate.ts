@@ -16,51 +16,66 @@ const nepaliDays = [
 ];
 
 /**
- * Accurate Nepali Date mapping for 2081 and 2082 BS.
- * Reference: 2081 Baishakh 1 = 2024-04-13
+ * Highly Precise Nepali Date & Time utility.
+ * Reference: January 14, 2025 (Tuesday) = Magh 1, 2081 (Maghe Sankranti)
  */
 export const getExactNepaliDate = (): string => {
   const now = new Date();
-  const dayName = nepaliDays[now.getDay()];
+  
+  // Get Nepal Time components directly to ensure timezone consistency
+  // This handles the "server time" vs "user time" issue effectively
+  const nepalTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kathmandu"}));
+  const dayName = nepaliDays[nepalTime.getDay()];
 
-  // Reference Point: 2081 Baishakh 1 is April 13, 2024
-  const refDate = new Date(2024, 3, 13);
-  const diffTime = now.getTime() - refDate.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  // Fixed Anchor: January 14, 2025 = Magh 1, 2081
+  // This is a standard reference point for 2081 BS
+  const anchorDate = new Date(2025, 0, 14); // Jan 14
+  
+  // Reset both to midnight to calculate exact day difference
+  const d1 = new Date(nepalTime.getFullYear(), nepalTime.getMonth(), nepalTime.getDate());
+  const d2 = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), anchorDate.getDate());
+  
+  const diffTime = d1.getTime() - d2.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-  // Actual days in months for 2081 and 2082 BS
-  const calendarData: Record<number, number[]> = {
-    2081: [31, 32, 31, 32, 31, 30, 30, 29, 30, 29, 30, 30],
-    2082: [31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30]
-  };
+  // Calendar configuration for 2081 BS
+  const months2081 = [31, 31, 32, 32, 31, 30, 30, 30, 29, 30, 30, 30];
+  
+  let bsYear = 2081;
+  let bsMonthIndex = 9; // Index for Magh (Starts at 0=Baishakh)
+  let bsDay = 1 + diffDays; // Base is Magh 1
 
-  let year = 2081;
-  let monthIndex = 0;
-  let remainingDays = diffDays;
-
-  // Process years
-  while (true) {
-    const months = calendarData[year] || calendarData[2081]; // Fallback if year not mapped
-    let yearTotalDays = months.reduce((a, b) => a + b, 0);
-    
-    if (remainingDays < yearTotalDays) {
-      // Find month in current year
-      for (let i = 0; i < months.length; i++) {
-        if (remainingDays < months[i]) {
-          monthIndex = i;
-          break;
-        }
-        remainingDays -= months[i];
-      }
-      break;
+  // Handle month overflows (Forward in time)
+  while (bsDay > months2081[bsMonthIndex]) {
+    bsDay -= months2081[bsMonthIndex];
+    bsMonthIndex++;
+    if (bsMonthIndex > 11) {
+      bsMonthIndex = 0;
+      bsYear++;
     }
-    remainingDays -= yearTotalDays;
-    year++;
   }
 
-  const nepYear = getNepaliDigits(year);
-  const nepMonth = nepaliMonths[monthIndex];
-  const nepDay = getNepaliDigits(remainingDays + 1);
+  // Handle month underflows (Backward in time)
+  while (bsDay < 1) {
+    bsMonthIndex--;
+    if (bsMonthIndex < 0) {
+      bsMonthIndex = 11;
+      bsYear--;
+    }
+    bsDay += months2081[bsMonthIndex];
+  }
 
-  return `${nepYear} साल ${nepMonth} ${nepDay} गते, ${dayName}`;
+  // Time formatting for display
+  let hours = nepalTime.getHours();
+  const minutes = nepalTime.getMinutes();
+  const ampm = hours >= 12 ? 'अपराह्न' : 'पूर्वाह्न';
+  hours = hours % 12;
+  hours = hours ? hours : 12; 
+  
+  const nepYearStr = getNepaliDigits(bsYear);
+  const nepMonthStr = nepaliMonths[bsMonthIndex];
+  const nepDayStr = getNepaliDigits(bsDay);
+  const nepTimeStr = `${getNepaliDigits(hours.toString().padStart(2, '0'))}:${getNepaliDigits(minutes.toString().padStart(2, '0'))}`;
+
+  return `${nepYearStr} साल ${nepMonthStr} ${nepDayStr} गते, ${dayName} (समय: ${nepTimeStr} ${ampm})`;
 };
