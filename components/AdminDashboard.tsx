@@ -315,6 +315,25 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsUserModalOpen(false);
   };
 
+  // Helper to set default permissions based on role
+  const handleRoleChange = (role: string) => {
+    let perms: string[] = [];
+    switch (role) {
+        case ROLES.CHIEF_EDITOR:
+            perms = Object.values(PERMISSIONS);
+            break;
+        case ROLES.EDITOR:
+            perms = [PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.POST_NEWS, PERMISSIONS.MANAGE_NEWS, PERMISSIONS.MANAGE_SECURITY];
+            break;
+        case ROLES.REPORTER:
+            perms = [PERMISSIONS.VIEW_DASHBOARD, PERMISSIONS.POST_NEWS, PERMISSIONS.MANAGE_SECURITY];
+            break;
+        default:
+            perms = [];
+    }
+    setUserForm(prev => ({ ...prev, role, permissions: perms }));
+  };
+
   const togglePermission = (perm: string) => {
     setUserForm(prev => {
         // Safe access to permissions array
@@ -1024,6 +1043,67 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <form onSubmit={handleUserSubmit} className="p-6 flex-grow overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                         {/* Column 1: Personal Info */}
+                        <div className="space-y-4">
+                            <h4 className="text-sm font-black text-gray-900 border-b pb-2 uppercase tracking-wide">व्यक्तिगत विवरण (Personal Info)</h4>
+                            
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">पूरा नाम (Full Name)</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={userForm.name} 
+                                    onChange={e => setUserForm({...userForm, name: e.target.value})} 
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" 
+                                    placeholder="नाम थर"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">युजरनेम (Username)</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={userForm.username} 
+                                    onChange={e => setUserForm({...userForm, username: e.target.value})} 
+                                    disabled={!!editingUser}
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none disabled:bg-gray-100 disabled:text-gray-500" 
+                                    placeholder="username"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">पासवर्ड (Password)</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={userForm.password} 
+                                    onChange={e => setUserForm({...userForm, password: e.target.value})} 
+                                    className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none" 
+                                    placeholder="password"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">पद (Role)</label>
+                                <div className="relative">
+                                    <select 
+                                        value={userForm.role} 
+                                        onChange={(e) => handleRoleChange(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none appearance-none bg-white"
+                                    >
+                                        {Object.values(ROLES).map(role => (
+                                            <option key={role} value={role}>{role}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                    </div>
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-1">पद परिवर्तन गर्दा अनुमतिहरू स्वतः अपडेट हुनेछन्।</p>
+                            </div>
+                        </div>
+
+                        {/* Column 2: Permissions */}
                         <div className="space-y-4">
                             <h4 className="text-sm font-black text-gray-900 border-b pb-2 uppercase tracking-wide">मेनु पहुँच अनुमति (Menu Access)</h4>
                             <p className="text-[10px] text-gray-400 mb-2 italic">यहाँबाट यो प्रयोगकर्ताले कुन मेनु र सब-मेनु देख्न पाउने हो छान्नुहोस्:</p>
